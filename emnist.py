@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as pyplot
+import matplotlib.pyplot as plt
 
 from sklearn.model_selection import train_test_split
 import cv2
@@ -88,7 +88,8 @@ model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accur
 
 history = model.fit(train_x, train_y, epochs=10, batch_size=512, verbose=1, validation_data=(val_x, val_y))
 
-model.save('digitsCNN.h5')
+
+#model.save('digitsCNN.h5')
 
 # plot accuracy and loss
 def plotgraph(epochs, acc, val_acc):
@@ -101,7 +102,8 @@ def plotgraph(epochs, acc, val_acc):
     plt.legend(['Train', 'Val'], loc='upper left')
     plt.show()
 
-val_acc = .history['val_acc']
+acc = history.history['accuracy']
+val_acc = history.history['val_accuracy']
 loss = history.history['loss']
 val_loss = history.history['val_loss']
 epochs = range(1,len(acc)+1)
