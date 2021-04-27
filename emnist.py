@@ -10,6 +10,7 @@ from keras.models import Sequential
 from keras.layers import Dense, Dropout, Flatten
 from keras.layers import Conv2D, MaxPooling2D
 from keras.utils import np_utils
+
 import sklearn.metrics as metrics
 
 #loading test and trainig data
@@ -17,18 +18,31 @@ train = pd.read_csv("emnist-balanced-train\emnist-balanced-train.csv",delimiter 
 test = pd.read_csv("emnist-balanced-test\emnist-balanced-test.csv",delimiter = ',')
 print("Train shape {}, Test shape {}".format(train.shape, test.shape))
 
+#mapping so values can come out as what they actually are
+label_map = pd.read_csv("emnist-balanced-mapping.txt", 
+                        delimiter = ' ', 
+                        index_col=0, 
+                        header=None, 
+                        squeeze=True)
+
+#output is represented as an int. This helps with mapping
+label_dictionary = {}
+for index, label in enumerate(label_map):
+    label_dictionary[index] = chr(label)
+
+print(label_dictionary)
 
 #images will be scaled to 28x28
 HEIGHT = 28
 WIDTH = 28
 
 #splitting training and testing data to xtrain/test and ytrain/test
-train_x = train.iloc[:,1:]
-train_y = train.iloc[:,0]
+X_train = train.iloc[:,1:]
+y_train = train.iloc[:,0]
 
-test_x = test.iloc[:,1:]
-test_y = test.iloc[:,0]
-print(train_x.shape,train_y.shape,test_x.shape,test_y.shape)
+X_test = test.iloc[:,1:]
+y_test = test.iloc[:,0]
+print(X_train.shape,y_train.shape,X_test.shape,y_test.shape)
 
 def rotate(image):
     image = image.reshape([HEIGHT, WIDTH])
@@ -37,37 +51,40 @@ def rotate(image):
     return image
 
 # Flip and rotate image
-train_x = np.asarray(train_x)
-train_x = np.apply_along_axis(rotate, 1, train_x)
-print ("train_x:",train_x.shape)
+X_train = np.asarray(X_train)
+X_train = np.apply_along_axis(rotate, 1, X_train)
+print ("X_train:",X_train.shape)
 
-test_x = np.asarray(test_x)
-test_x = np.apply_along_axis(rotate, 1, test_x)
-print ("test_x:",test_x.shape)
+X_test = np.asarray(X_test)
+X_test = np.apply_along_axis(rotate, 1, X_test)
+print ("X_test:",X_test.shape)
 
 
 # Normalise so now each pixel is between 0 and 1
-train_x = train_x.astype('float32')
-train_x /= 255
-test_x = test_x.astype('float32')
-test_x /= 255
+X_train = X_train.astype('float32')
+X_train /= 255
+X_test = X_test.astype('float32')
+X_test /= 255
+
+plt.imshow(X_train[3])
+plt.show()
 
 # number of classes
-num_classes = train_y.nunique()
+num_classes = y_train.nunique()
 
 
 # One hot encoding
-train_y = np_utils.to_categorical(train_y, num_classes)
-test_y = np_utils.to_categorical(test_y, num_classes)
-print("train_y: ", train_y.shape)
-print("test_y: ", test_y.shape)
+y_train = np_utils.to_categorical(y_train, num_classes)
+y_test = np_utils.to_categorical(y_test, num_classes)
+print("y_train: ", y_train.shape)
+print("y_test: ", y_test.shape)
 
 # Reshape image for CNN
-train_x = train_x.reshape(-1, HEIGHT, WIDTH, 1)
-test_x = test_x.reshape(-1, HEIGHT, WIDTH, 1)
+X_train = X_train.reshape(-1, HEIGHT, WIDTH, 1)
+X_test = X_test.reshape(-1, HEIGHT, WIDTH, 1)
 
 # splits to train and val
-train_x, val_x, train_y, val_y = train_test_split(train_x, train_y, test_size= 0.10, random_state=7)
+X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size= 0.10, random_state=69)
 
 #model
 model = Sequential()
@@ -86,10 +103,10 @@ model.summary()
 
 model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-history = model.fit(train_x, train_y, epochs=10, batch_size=512, verbose=1, validation_data=(val_x, val_y))
+history = model.fit(X_train, y_train, epochs=10, batch_size=512, verbose=1, validation_data=(X_val, y_val))
 
 
-#model.save('digitsCNN.h5')
+model.save('digitsCNN.h5')
 
 # plot accuracy and loss
 def plotgraph(epochs, acc, val_acc):
@@ -111,10 +128,18 @@ epochs = range(1,len(acc)+1)
 plotgraph(epochs, acc, val_acc)
 # loss curve
 plotgraph(epochs, loss, val_loss)
-score = model.evaluate(test_x, test_y, verbose=0)
+score = model.evaluate(X_test, y_test, verbose=0)
 print("Test loss:", score[0])
 print("Test accuracy:", score[1])
-y_pred = model.predict(test_x)
+y_pred = model.predict(X_test)
 y_pred = (y_pred > 0.5)
-cm = metrics.confusion_matrix(test_y.argmax(axis=1), y_pred.argmax(axis=1))
 
+scores = model.evaluate(X_val, y_val)
+print(scores)
+for i in range(42, 48):
+    plt.subplot(380 + (i%10+1))
+    plt.imshow(X_test[i].reshape(28, 28), cmap=plt.cm.gray)
+    plt.title(label_dictionary[y_pred[i].argmax()])
+plt.show()
+
+cm = metrics.confusion_matrix(y_test.argmax(axis=1), y_pred.argmax(axis=1))
