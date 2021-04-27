@@ -19,7 +19,7 @@ test = pd.read_csv("emnist-balanced-test\emnist-balanced-test.csv",delimiter = '
 print("Train shape {}, Test shape {}".format(train.shape, test.shape))
 
 #mapping so values can come out as what they actually are
-label_map = pd.read_csv("emnist-balanced-mapping.txt", 
+label_map = pd.read_csv("emnist-dataset\emnist-balanced-mapping.txt", 
                         delimiter = ' ', 
                         index_col=0, 
                         header=None, 
