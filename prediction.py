@@ -68,7 +68,7 @@ X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size= 0
 
 
 #mapping so values can come out as what they actually are
-label_map = pd.read_csv("emnist-balanced-mapping.txt", 
+label_map = pd.read_csv("emnist-dataset\emnist-balanced-mapping.txt", 
                         delimiter = ' ', 
                         index_col=0, 
                         header=None, 
@@ -82,37 +82,10 @@ for index, label in enumerate(label_map):
 
 print(label_dictionary)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 WIDTH = 640
 HEIGHT = 480
 
 model = load_model("digitsCNN.h5")
-
-y_pred = model.predict(X_val)
-for i in range(42, 48):
-    plt.subplot(380 + (i%10+1))
-    plt.imshow(X_val[i].reshape(28, 28), cmap=plt.cm.gray)
-    plt.title(label_dictionary[y_pred[i].argmax()])
-plt.show()
-model.summary()
 
 #opens camera
 cap = cv2.VideoCapture(0)
@@ -135,12 +108,10 @@ while True:
     _, binImg = cv2.threshold(blur, 125, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
     #cv2.imshow("bin", binImg)
 
+    cv2.imshow("bin", binImg)
+
     resized = cv2.resize(binImg,(28,28))
     #print("reized ", resized.shape)
-
-    #invert binary image
-    imgInvert = 255 - resized
-    cv2.imshow("invert", resized)
 
     #resize img for model
     modelImg = resized.reshape(1,28,28,1)
