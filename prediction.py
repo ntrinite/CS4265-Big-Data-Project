@@ -82,10 +82,20 @@ for index, label in enumerate(label_map):
 
 print(label_dictionary)
 
+
+
 WIDTH = 640
 HEIGHT = 480
 
-model = load_model("digitsCNN.h5")
+model = load_model("CNN_model.h5")
+
+
+scores = model.evaluate(X_val, y_val)
+y_pred = model.predict(X_val)
+f1 = metrics.f1_score(y_val.argmax(axis=1), y_pred.argmax(axis=1), average = 'weighted')
+percision = metrics.precision_score(y_val.argmax(axis=1), y_pred.argmax(axis=1), average = 'weighted')
+recall = metrics.recall_score(y_val.argmax(axis=1), y_pred.argmax(axis=1), average = 'weighted')
+print("Accuracy: {}\n Loss: {} \n F1 Score: {} \n Percision: {} \n Recall: {}".format(scores[1],scores[0],f1,percision,recall))
 
 #opens camera
 cap = cv2.VideoCapture(0)

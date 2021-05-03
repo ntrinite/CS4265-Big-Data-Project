@@ -70,6 +70,7 @@ plt.imshow(X_train[3])
 plt.show()
 
 # number of classes
+#47 classes because some letters look the same in caps and in lower case
 num_classes = y_train.nunique()
 
 
@@ -106,7 +107,7 @@ model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accur
 history = model.fit(X_train, y_train, epochs=10, batch_size=512, verbose=1, validation_data=(X_val, y_val))
 
 
-model.save('digitsCNN.h5')
+model.save('CNN_model.h5')
 
 # plot accuracy and loss
 def plotgraph(epochs, acc, val_acc):
