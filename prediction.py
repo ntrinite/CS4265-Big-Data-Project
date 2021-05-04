@@ -3,29 +3,31 @@ import cv2
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-
 from keras.utils import np_utils
 from sklearn.model_selection import train_test_split
-
 import sklearn.metrics as metrics
-
 from keras.models import load_model
 
-#images will be scaled to 28x28
+# Images will be scaled to 28x28 resolution
 HEIGHT = 28
 WIDTH = 28
 
-#loading test and trainig data
+# Live capture resolution is 640x480
+CAP_WIDTH = 640
+CAP_HEIGHT = 480
+
+# Loading test and trainig data
 train = pd.read_csv("emnist-balanced-train\emnist-balanced-train.csv",delimiter = ',')
 test = pd.read_csv("emnist-balanced-test\emnist-balanced-test.csv",delimiter = ',')
 
-#splitting training and testing data to xtrain/test and ytrain/test
+# Splitting training and testing data to xtrain/test and ytrain/test
 X_train = train.iloc[:,1:]
 y_train = train.iloc[:,0]
 
 X_test = test.iloc[:,1:]
 y_test = test.iloc[:,0]
-print(X_train.shape,y_train.shape,X_test.shape,y_test.shape)
+
+#print(X_train.shape,y_train.shape,X_test.shape,y_test.shape)
 
 def rotate(image):
     image = image.reshape([HEIGHT, WIDTH])
@@ -36,12 +38,11 @@ def rotate(image):
 # Flip and rotate image
 X_train = np.asarray(X_train)
 X_train = np.apply_along_axis(rotate, 1, X_train)
-print ("X_train:",X_train.shape)
+#print ("X_train:",X_train.shape)
 
 X_test = np.asarray(X_test)
 X_test = np.apply_along_axis(rotate, 1, X_test)
-print ("X_test:",X_test.shape)
-
+#print ("X_test:",X_test.shape)
 
 # Normalise so now each pixel is between 0 and 1
 X_train = X_train.astype('float32')
@@ -49,46 +50,38 @@ X_train /= 255
 X_test = X_test.astype('float32')
 X_test /= 255
 
-# number of classes
+# Number of classes
 num_classes = y_train.nunique()
-
 
 # One hot encoding
 y_train = np_utils.to_categorical(y_train, num_classes)
 y_test = np_utils.to_categorical(y_test, num_classes)
-print("y_train: ", y_train.shape)
-print("y_test: ", y_test.shape)
+#print("y_train: ", y_train.shape)
+#print("y_test: ", y_test.shape)
 
 # Reshape image for CNN
 X_train = X_train.reshape(-1, HEIGHT, WIDTH, 1)
 X_test = X_test.reshape(-1, HEIGHT, WIDTH, 1)
 
-# splits to train and val
+# Splits to train and val
 X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size= 0.10, random_state=69)
 
-
-#mapping so values can come out as what they actually are
+# Mapping so values can come out as what they actually are
 label_map = pd.read_csv("emnist-dataset\emnist-balanced-mapping.txt", 
                         delimiter = ' ', 
                         index_col=0, 
                         header=None, 
                         squeeze=True)
 
-
-#output is represented as an int. This helps with mapping
+# Output is represented as an int. This helps with mapping
 label_dictionary = {}
 for index, label in enumerate(label_map):
     label_dictionary[index] = chr(label)
 
 print(label_dictionary)
 
-
-
-WIDTH = 640
-HEIGHT = 480
-
+# Load Model
 model = load_model("CNN_model.h5")
-
 
 scores = model.evaluate(X_val, y_val)
 y_pred = model.predict(X_val)
@@ -97,24 +90,24 @@ percision = metrics.precision_score(y_val.argmax(axis=1), y_pred.argmax(axis=1),
 recall = metrics.recall_score(y_val.argmax(axis=1), y_pred.argmax(axis=1), average = 'weighted')
 print("Accuracy: {}\n Loss: {} \n F1 Score: {} \n Percision: {} \n Recall: {}".format(scores[1],scores[0],f1,percision,recall))
 
-#opens camera
+# Opens camera
 cap = cv2.VideoCapture(0)
 
-cap.set(3,WIDTH)
-cap.set(4,HEIGHT)
+cap.set(3,CAP_WIDTH)
+cap.set(4,CAP_HEIGHT)
 
 while True:
     prediction = ' '
     sucess, img = cap.read()
 
-    #converts image to grayscale
+    # Converts image to grayscale
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     #cv2.imshow("gray", gray)
 
-    #applys gaussian blur to reduce noise
+    # Applys gaussian blur to reduce noise
     blur = cv2.GaussianBlur(gray, (35, 35), 0)
 
-    #applies threshold, receives binary iamge
+    # Applies threshold, receives binary iamge
     _, binImg = cv2.threshold(blur, 125, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
     #cv2.imshow("bin", binImg)
 
@@ -123,7 +116,7 @@ while True:
     resized = cv2.resize(binImg,(28,28))
     #print("reized ", resized.shape)
 
-    #resize img for model
+    # Resize img for model
     modelImg = resized.reshape(1,28,28,1)
 
     prediction = model.predict(modelImg)
@@ -134,4 +127,3 @@ while True:
     cv2.imshow("name", img)
     if cv2.waitKey(1) and 0xFF == ord('q'):
         break
-        
